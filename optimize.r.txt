@@ -1,0 +1,76 @@
+library(numDeriv)
+newton<-function(f,x,e){
+	err<-Inf
+	n<-0
+	maxn<-1000
+	
+	#f<-match.fun(f)
+	#f<-function(x) f(x,...)
+	fp<-genD(f,x)$D
+	fp1<-fp[1]
+	fp2<-fp[2]
+	while(err > e && maxn >= n){
+		xnew<-x-fp1/fp2
+		err<-abs(xnew-x)
+
+		x<-xnew
+		fp<-genD(f,x)$D
+		fp1<-fp[1]
+		fp2>-fp[2]
+		n<-n+1
+	}
+	
+	return(list(sol=x,iter=n))
+}
+
+x<-c(1.77,-0.23,2.76,3.80,3.47,56.75,-1.34,4.24,-2.44,3.29,3.71,-2.40,4.53,-0.07,-1.05,-13.87,-2.53,-1.75,0.27,43.21)
+
+
+cauchy.loglik<-function(theta){
+	n<-length(theta)
+	res<-rep(0,n)
+	for (i in 1:n){
+		res[i]<-sum(dcauchy(x,theta[i],1,log=T))
+	}
+	return(res)
+}
+
+
+startpt<-c(-11,-1,0,1.5,4,4.7,7,8,38)
+res1<-matrix(0,nrow=length(startpt),ncol=2)
+for (i in 1:length(startpt)){
+	temp1<-newton(cauchy.loglik,startpt[i],10^(-7))
+	res1[i,1]<-temp1[[1]]
+	res1[i,2]<-temp1[[2]]
+}
+
+
+seq1<-seq(-50,50,0.01)
+plot(seq1,cauchy.loglik(seq1),type="l")
+abline(v=res1[,1])
+
+##How about R's optimize function?
+optimize(cauchy.loglik, c(-50,50),maximum=T)
+
+
+
+##exercise 2.2
+x<-c(3.91,4.85,2.28,4.06,3.70,4.04,5.46,3.53,2.28,1.96,2.53,3.88,2.22,
+3.47,4.82,2.46,2.99,2.54,0.52,2.50)
+
+mylik<-function(theta){
+	n<-length(theta)
+	res<-rep(0,n)
+	for (i in 1:n){
+		res[i]<-sum(log((1-cos(x-theta[i]))/2*pi))
+	}
+	return(res)
+}
+
+myseq<-seq(-pi,pi,0.01)
+plot(myseq,mylik(myseq),type="l")
+
+optimize(mylik,c(-pi,pi),maximum=T)
+
+
+

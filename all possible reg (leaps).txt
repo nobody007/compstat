@@ -1,0 +1,78 @@
+library(leaps)
+salary<-read.table("baseball.dat",header=T)
+lm1<-lm(salary~., data=salary)
+
+reg1<-regsubsets(salary~., data=salary, nvmax=27)
+reg1.sum<-summary(reg1)
+
+##get AIC using rss
+
+n<-nrow(salary)
+p<-ncol(salary)  #intercept is always in the model. p=number of predictors+1
+
+myaic<-n*log(reg1.sum$rss/n)+2*2:p
+#check myaic
+
+
+plot(2:p, myaic, type="b",xlab="number of parameters", ylab="AIC")
+which.min(myaic)
+
+##model 8 is the best (min AIC)
+
+coef(reg1,8)
+
+newdata<-salary[,reg1.sum$which[8,]]
+lm2<-lm(salary~., data=newdata)
+summary(lm2)
+
+
+#go back to AIC, BIC
+reg1.sum$bic   #all negative values? what's the definition of BIC here?
+
+mybic<-myaic-2*2:p + log(n)*2:p
+mybic-reg1.sum$bic
+
+plot(2:p, myaic,type="b",ylim=c(4410,4650))
+lines(2:p,mybic,type="b",col=2)
+legend(20,4640,c("AIC","BIC"),col=1:2, lty=rep(1,2))
+
+
+lm1.step<-step(lm1,direction="both")
+extractAIC(lm1.step)
+min(myaic)
+
+step.terms<-c("salary",attr(summary(lm1.step)$terms,"term.labels"))
+
+sim.n<-10000
+res<-matrix(0,nrow=sim.n,ncol=3)
+p<-0.7
+
+for (i in 1:sim.n){
+	train.ind<-sample(n,n*p)
+	train.data<-salary[train.ind,]
+	test.data<-salary[-train.ind,]
+
+	#fitting in a training set
+	lm1<-lm(salary~., data=train.data)  #full model
+	lm1.leaps<-lm(salary~., data=train.data[,reg1.sum$which[8,]]) #model from all-possible reg
+	lm1.step<-lm(salary~., data=train.data[,step.terms])#stepwise reg model
+
+	#predicted values for a test set
+	lm1.pred<-predict(lm1,test.data)
+	lm1.leaps.pred<-predict(lm1.leaps,test.data)
+	lm1.step.pred<-predict(lm1.step,test.data)
+
+	#evaluation (compute MRSS)
+	lm1.MRSS<-mean((lm1.pred-test.data$salary)^2)
+	lm1.leaps.MRSS<-mean((lm1.leaps.pred-test.data$salary)^2)
+	lm1.step.MRSS<-mean((lm1.step.pred-test.data$salary)^2)
+	res[i,]<-c(lm1.MRSS,lm1.leaps.MRSS,lm1.step.MRSS)
+}
+
+colMeans(res)
+apply(res,2,sd)
+
+
+
+
+

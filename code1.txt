@@ -1,0 +1,163 @@
+### A code for bisection method
+### f1 is the original function, f3 is the 1st derivative function
+f1<-function(x){
+	log(x)/(1+x)
+}
+
+
+f3<-function(x){
+	(1+1/x-log(x))/(1+x)^2
+}
+
+#the simplest function
+bisec1<-function(a,b){
+
+	maxiter<-1000
+	threshold<-10^(-10)
+	err<-1
+	niter<-0
+	x0<-(a+b)/2
+
+	while ( niter<=maxiter && err >= threshold){
+		#update interval
+		if (f3(a)*f3(x0) <=0)	{b<-x0}
+		else	{a<-x0}
+		
+		#update x
+		oldx0<-x0
+		x0<-(a+b)/2
+
+		
+		#update error and niter
+		err<-abs(oldx0-x0)
+		niter<-niter+1
+		# to see each step
+		#print(paste(niter,x0,err,sep="  "))
+
+	}
+
+	return(x0)
+}
+
+bisec1(3,4)
+
+bisec1(1,10)
+
+## how to pass function as an argument
+
+testftn1<-function(f,a){
+	#check if function is a desired function object
+	f<-match.fun(f)
+	ff<-function(x) f(x)
+	return(ff(a))
+}
+
+testftn1(f1,10)
+
+## pass with additional arguments
+
+
+testftn2<-function(f,a,...){
+	f<-match.fun(f)
+	ff<-function(x) f(x,...)
+	return(ff(a))
+}
+
+f10<-function(x,y){
+	(x+y)/2
+}
+
+
+testftn2(f10,5,y=10)
+testftn2(f10,1:5,y=10)
+
+
+
+
+#medium level, put 1st derivative as an input.
+
+bisec2<-function(f,a,b){
+	
+	#get the function as an input
+	f<-match.fun(f)
+	ff<-function(x) f(x)
+	
+	#initial settings
+	maxiter<-1000
+	threshold<-10^(-10)
+	err<-1
+	niter<-0
+	x0<-(a+b)/2
+
+	while ( niter<=maxiter && err >= threshold){
+		#update interval
+		if (ff(a)*ff(x0) <=0)	{b<-x0}
+		else	{a<-x0}
+		
+		#update x
+		oldx0<-x0
+		x0<-(a+b)/2
+
+		
+		#update error and niter
+		err<-abs(oldx0-x0)
+		niter<-niter+1
+		# to see each step
+		#print(paste(niter,x0,err,sep="  "))
+
+	}
+
+	return(x0)
+}
+
+
+
+#most general level, input is the original function
+#need numDeriv package
+
+library(numDeriv)
+
+bisec3<-function(f,a,b){
+	f<-match.fun(f)
+	ff<-function(x) f(x)
+	
+	#initial settings
+	maxiter<-1000
+	threshold<-10^(-10)
+	err<-1
+	niter<-0
+	x0<-(a+b)/2
+
+	fprime<-diag(genD(ff,c(a,x0,b))$D) #fprime has f'(a), f'(x0) and f'(b) value
+	fprime.a<-fprime[1]
+	fprime.x0<-fprime[2]
+	fprime.b<-fprime[3]
+	
+	while ( niter<=maxiter && err >= threshold){
+		#update interval
+		if (fprime.a*fprime.x0 <=0)	{b<-x0}
+		else	{a<-x0}
+		
+		#update x and fprime
+		oldx0<-x0
+		x0<-(a+b)/2
+		fprime<-diag(genD(ff,c(a,x0,b))$D) #fprime has f'(a), f'(x0) and f'(b) value
+		fprime.a<-fprime[1]
+		fprime.x0<-fprime[2]
+		fprime.b<-fprime[3]
+
+		
+		#update error and niter
+		err<-abs(oldx0-x0)
+		niter<-niter+1
+		# to see each step
+		#print(paste(niter,x0,err,sep="  "))
+
+	}
+
+	return(x0)
+}
+
+bisec3(f1,3,4)
+	
+
